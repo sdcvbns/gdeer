@@ -3,106 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مشغل طالب المطور | النسخة الشاملة</title>
+    <title>مشغل طالب الفوري | النسخة المعتمدة</title>
     
-    <!-- مكتبة Video.js مع دعم تلقائي للـ HLS -->
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 
     <style>
-        * { -webkit-user-select: none; user-select: none; outline: none; box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: sans-serif; }
-        
-        /* تصميم زجاجي عصري */
-        .ui-screen {
-            height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        * { -webkit-user-select: none; user-select: none; outline: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; }
+
+        /* التصميم الزجاجي */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 35px; padding: 30px; backdrop-filter: blur(20px);
+            width: 85%; max-width: 350px; text-align: center;
         }
 
-        .glass-box {
+        .ch-button {
             background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 40px; padding: 40px; backdrop-filter: blur(25px);
-            width: 90%; max-width: 380px; text-align: center;
+            border-radius: 20px; padding: 15px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s;
         }
+        .ch-button:active { transform: scale(0.95); background: rgba(103, 80, 164, 0.2); }
 
-        .play-btn {
-            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white; border-radius: 20px; padding: 20px; width: 100%; margin: 15px 0;
-            font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s;
-        }
-        .play-btn:active { background: #6750a4; transform: scale(0.95); }
+        .dot { width: 12px; height: 12px; background: #6750a4; border-radius: 50%; box-shadow: 0 0 10px #6750a4; }
 
-        /* حاوية الفيديو */
-        #video-container {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
-        }
-
+        /* المشغل وزر الإغلاق */
+        #player-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; }
         .video-js { width: 100% !important; height: 100% !important; }
-
-        .btn-exit {
-            position: absolute; top: 30px; right: 25px; background: rgba(0,0,0,0.6);
-            color: white; border: 1px solid rgba(255,255,255,0.2); 
-            padding: 10px 20px; border-radius: 15px; z-index: 10000;
+        
+        #close-layer {
+            position: absolute; top: 20px; right: 20px; z-index: 10000;
+            background: rgba(0, 0, 0, 0.6); color: white; border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px; border-radius: 15px; cursor: pointer; backdrop-filter: blur(5px);
+            font-weight: bold; font-size: 14px;
         }
+
+        /* تنبيه بسيط */
+        #msg { position: fixed; bottom: 20px; background: rgba(255,0,0,0.7); padding: 10px 20px; border-radius: 20px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="ui-screen" id="main-ui">
-    <div class="glass-box">
-        <h2 style="margin-bottom: 30px;">مشغل طالب (2026)</h2>
-        <button class="play-btn" onclick="openChannel('ch1')">القناة الأولى (A2)</button>
-        <button class="play-btn" onclick="openChannel('ch2')">القناة الثانية (A3)</button>
+<div id="msg">السيرفر غير متصل</div>
+
+<div id="main-ui" class="glass-panel">
+    <h2 style="background: linear-gradient(135deg, #6750a4, #904af9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 25px;">مشغل طالب</h2>
+    
+    <div class="ch-button" onclick="loadAndPlay('ch1')">
+        <div class="dot"></div>
+        <span>تشغيل القناة الأولى (A2)</span>
+    </div>
+
+    <div class="ch-button" onclick="loadAndPlay('ch2')">
+        <div class="dot" style="background: #904af9;"></div>
+        <span>تشغيل القناة الثانية (A3)</span>
     </div>
 </div>
 
-<div id="video-container">
-    <button class="btn-exit" onclick="closePlayer()">إغلاق ✕</button>
-    <video id="player" class="video-js vjs-big-play-centered" controls preload="auto" playsinline></video>
+<div id="player-container">
+    <button id="close-layer" onclick="stopPlayer()">✕ إغلاق البث</button>
+    <video id="vid" class="video-js vjs-big-play-centered" controls playsinline></video>
 </div>
 
 <script>
+    // استخدمنا الرابط الذي وضعتَه أنت في الكود القديم لأنه هو الشغال
     const scriptURL = 'https://script.google.com/macros/s/AKfycbxQdwwVmb9xQISdFONnSkL7r4-74dB_BwTcNlWO_7O0_wUl5kivX8iSsqcIZtVZqqyr/exec';
-    
-    // إعداد المشغل
-    const videoInstance = videojs('player', {
-        fluid: true,
-        responsive: true
-    });
+    const player = videojs('vid');
 
-    async function openChannel(key) {
+    async function loadAndPlay(channelKey) {
+        const msg = document.getElementById('msg');
+        msg.style.display = 'none';
+
         try {
-            const res = await fetch(`${scriptURL}?t=${Date.now()}`);
-            const data = await res.json();
-            const streamUrl = data[key] || data.url;
+            // جلب البيانات بنفس طريقة كودك القديم (مع Math.random لكسر التخزين)
+            const response = await fetch(scriptURL + '?cache=' + Math.random());
+            const data = await response.json();
 
-            if (streamUrl) {
-                document.getElementById('video-container').style.display = 'block';
+            // ملاحظة: إذا كان السكريبت يرسل "url" فقط استخدم data.url
+            // إذا كان يرسل ch1 و ch2 استخدمنا المنطق أدناه:
+            let finalUrl = data[channelKey] || data.url; 
 
-                // إجبار المشغل على التعرف على النوع لحل مشكلة "Format not support"
-                let type = 'video/mp4'; 
-                if (streamUrl.includes('m3u8')) {
-                    type = 'application/x-mpegURL';
-                }
-
-                videoInstance.src({ src: streamUrl, type: type });
-                videoInstance.play().catch(() => {
-                    videoInstance.muted(true);
-                    videoInstance.play();
+            if (finalUrl) {
+                document.getElementById('player-container').style.display = 'block';
+                player.src({ 
+                    src: finalUrl, 
+                    type: (finalUrl.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4') 
                 });
+                player.play().catch(() => {
+                    player.muted(true);
+                    player.play();
+                });
+            } else {
+                showError();
             }
         } catch (e) {
-            alert("خطأ في الاتصال بالسيرفر");
+            showError();
         }
     }
 
-    function closePlayer() {
-        videoInstance.pause();
-        videoInstance.dispose(); // حذف المشغل من الذاكرة تماماً
-        location.reload(); // إعادة تحميل الصفحة لضمان تنظيف الذاكرة (حل فعال جداً للآيفون والأندرويد)
+    function showError() {
+        const msg = document.getElementById('msg');
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 3000);
+    }
+
+    function stopPlayer() {
+        player.pause();
+        document.getElementById('player-container').style.display = 'none';
     }
 </script>
-
 </body>
 </html>
