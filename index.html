@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مشغل طالب المباشر | MBC Iraq</title>
+    <title>مشغل طالب الشامل | النسخة الاحترافية</title>
     
+    <!-- مكتبات التشغيل العالمية -->
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <!-- محرك فك تشفير HLS المتقدم -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
     <style>
-        * { -webkit-user-select: none; box-sizing: border-box; outline: none; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: sans-serif; overflow: hidden; }
+        * { -webkit-user-select: none; user-select: none; outline: none; box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
         
         .glass-bg {
             height: 100vh; display: flex; align-items: center; justify-content: center;
@@ -17,28 +23,30 @@
         .panel {
             background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 35px; padding: 35px; backdrop-filter: blur(25px);
-            width: 90%; max-width: 360px; text-align: center;
+            width: 90%; max-width: 380px; text-align: center;
             box-shadow: 0 15px 35px rgba(0,0,0,0.7);
         }
 
-        .btn-direct {
+        .btn-play {
             background: linear-gradient(135deg, #6750a4, #904af9); color: white;
             border: none; border-radius: 20px; padding: 20px; width: 100%; margin: 12px 0;
             font-size: 17px; font-weight: bold; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(103, 80, 164, 0.3);
         }
-        .btn-direct:active { transform: scale(0.95); opacity: 0.9; }
+        .btn-play:active { transform: scale(0.95); opacity: 0.9; }
 
         #player-layer {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999;
         }
 
-        video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+        .video-js { width: 100% !important; height: 100% !important; }
 
         .close-btn {
-            position: absolute; top: 30px; right: 20px; background: rgba(0,0,0,0.6);
+            position: absolute; top: 30px; right: 20px; background: rgba(255,255,255,0.2);
             color: white; border: 1px solid rgba(255,255,255,0.2); 
             padding: 10px 20px; border-radius: 15px; z-index: 10000; cursor: pointer;
+            backdrop-filter: blur(10px);
         }
     </style>
 </head>
@@ -48,42 +56,65 @@
     <div class="panel">
         <h2 style="color: white; margin-bottom: 30px; letter-spacing: 1px;">مشغل طالب 2026</h2>
         
-        <!-- تم دمج رابط MBC Iraq مباشرة -->
-        <button class="btn-direct" onclick="playStream('https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-iraq/e38c44b1b43474e1c39cb5b90203691e/index.m3u8?aws.manifestfilter=video_height:144-720;video_co')">
+        <!-- زر القناة التي أرسلتها -->
+        <button class="btn-play" onclick="smartLoad('https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-iraq/e38c44b1b43474e1c39cb5b90203691e/index.m3u8?aws.manifestfilter=video_height:144-720;video_co')">
             تشغيل MBC Iraq
         </button>
 
-        <button class="btn-direct" style="background: #311b92;" onclick="alert('يرجى إضافة الرابط الثاني يدوياً')">
-            القناة الثانية
+        <button class="btn-play" style="background: #311b92;" onclick="smartLoad('ضع_رابط_آخر_هنا')">
+            قناة إضافية
         </button>
     </div>
 </div>
 
 <div id="player-layer">
-    <div class="close-btn" onclick="stopStream()">إغلاق البث ✕</div>
-    <video id="video-obj" controls playsinline autoplay></video>
+    <div class="close-btn" onclick="destroyPlayer()">إغلاق ✕</div>
+    <video id="universal-player" class="video-js vjs-big-play-centered" playsinline></video>
 </div>
 
 <script>
-    const video = document.getElementById('video-obj');
-
-    function playStream(url) {
-        if (url) {
-            document.getElementById('player-layer').style.display = 'block';
-            video.src = url;
-            
-            // محاولة التشغيل مع كتم الصوت إذا لزم الأمر (لسياسة آيفون)
-            video.play().catch(() => {
-                video.muted = true;
-                video.play();
-            });
+    var player = videojs('universal-player', {
+        controls: true,
+        fluid: true,
+        html5: {
+            hls: { overrideNative: true },
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false
         }
+    });
+
+    function smartLoad(url) {
+        if (!url || url === "" || url === "ضع_رابط_آخر_هنا") return;
+        
+        document.getElementById('player-layer').style.display = 'block';
+
+        // تحديد النوع تلقائياً بناءً على محتوى الرابط
+        let type = 'video/mp4'; // الافتراضي
+        if (url.includes('m3u8') || url.includes('manifest')) {
+            type = 'application/x-mpegURL';
+        }
+
+        player.src({
+            src: url,
+            type: type
+        });
+
+        player.ready(function() {
+            // محاولة التشغيل مع التعامل مع قيود المتصفحات
+            var promise = player.play();
+            if (promise !== undefined) {
+                promise.catch(function() {
+                    player.muted(true);
+                    player.play();
+                });
+            }
+        });
     }
 
-    function stopStream() {
-        video.pause();
-        video.src = ""; 
-        video.load();
+    function destroyPlayer() {
+        player.pause();
+        player.reset(); // مسح الرابط والبيانات تماماً
         document.getElementById('player-layer').style.display = 'none';
     }
 </script>
