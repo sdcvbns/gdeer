@@ -3,116 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مشغل طالب الشامل | 2026</title>
+    <title>مشغل طالب الفوري | النسخة المعتمدة</title>
     
-    <!-- مكتبة HLS.js الأساسية لتشغيل m3u8 على المتصفحات التي لا تدعمه افتراضياً -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 
     <style>
-        * { -webkit-user-select: none; user-select: none; outline: none; box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
+        * { -webkit-user-select: none; user-select: none; outline: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; }
+
+        /* التصميم الزجاجي */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 35px; padding: 30px; backdrop-filter: blur(20px);
+            width: 85%; max-width: 350px; text-align: center;
+        }
+
+        .ch-button {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; padding: 15px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.3s;
+        }
+        .ch-button:active { transform: scale(0.95); background: rgba(103, 80, 164, 0.2); }
+
+        .dot { width: 12px; height: 12px; background: #6750a4; border-radius: 50%; box-shadow: 0 0 10px #6750a4; }
+
+        /* المشغل وزر الإغلاق */
+        #player-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; }
+        .video-js { width: 100% !important; height: 100% !important; }
         
-        /* التصميم الزجاجي الذي تفضله في مشروعك "مبيعات طالب" */
-        .glass-container {
-            height: 100vh; display: flex; align-items: center; justify-content: center;
-            background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
+        #close-layer {
+            position: absolute; top: 20px; right: 20px; z-index: 10000;
+            background: rgba(0, 0, 0, 0.6); color: white; border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px; border-radius: 15px; cursor: pointer; backdrop-filter: blur(5px);
+            font-weight: bold; font-size: 14px;
         }
 
-        .main-panel {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 35px; padding: 35px; backdrop-filter: blur(25px);
-            width: 85%; max-width: 360px; text-align: center;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-        }
-
-        .btn-action {
-            background: linear-gradient(135deg, #6750a4, #904af9); color: white;
-            border: none; border-radius: 18px; padding: 18px; width: 100%; margin: 12px 0;
-            font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;
-            box-shadow: 0 5px 15px rgba(103, 80, 164, 0.3);
-        }
-        .btn-action:active { transform: scale(0.94); opacity: 0.9; }
-
-        /* طبقة الفيديو الكاملة */
-        #video-wrap {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
-        }
-
-        video { width: 100%; height: 100%; object-fit: contain; }
-
-        .btn-close-video {
-            position: absolute; top: 25px; right: 20px; background: rgba(0,0,0,0.5);
-            color: white; border: 1px solid rgba(255,255,255,0.2); 
-            padding: 10px 20px; border-radius: 15px; z-index: 10000; cursor: pointer;
-            backdrop-filter: blur(5px);
-        }
+        /* تنبيه بسيط */
+        #msg { position: fixed; bottom: 20px; background: rgba(255,0,0,0.7); padding: 10px 20px; border-radius: 20px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="glass-container" id="ui-main">
-    <div class="main-panel">
-        <h2 style="margin-bottom: 30px; font-weight: 800; background: linear-gradient(to right, #fff, #904af9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">مشغل طالب الذكي</h2>
-        
-        <button class="btn-action" onclick="fetchAndPlay('ch1')">تشغيل القناة الأولى (A2)</button>
-        <button class="btn-action" style="background: linear-gradient(135deg, #311b92, #512da8);" onclick="fetchAndPlay('ch2')">تشغيل القناة الثانية (A3)</button>
+<div id="msg">السيرفر غير متصل</div>
+
+<div id="main-ui" class="glass-panel">
+    <h2 style="background: linear-gradient(135deg, #6750a4, #904af9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 25px;">مشغل طالب</h2>
+    
+    <div class="ch-button" onclick="loadAndPlay('ch1')">
+        <div class="dot"></div>
+        <span>تشغيل القناة الأولى (A2)</span>
+    </div>
+
+    <div class="ch-button" onclick="loadAndPlay('ch2')">
+        <div class="dot" style="background: #904af9;"></div>
+        <span>تشغيل القناة الثانية (A3)</span>
     </div>
 </div>
 
-<div id="video-wrap">
-    <button class="btn-close-video" onclick="killPlayer()">إغلاق ✕</button>
-    <video id="vid-player" controls playsinline autoplay></video>
+<div id="player-container">
+    <button id="close-layer" onclick="stopPlayer()">✕ إغلاق البث</button>
+    <video id="vid" class="video-js vjs-big-play-centered" controls playsinline></video>
 </div>
 
 <script>
+    // استخدمنا الرابط الذي وضعتَه أنت في الكود القديم لأنه هو الشغال
     const scriptURL = 'https://script.google.com/macros/s/AKfycbxQdwwVmb9xQISdFONnSkL7r4-74dB_BwTcNlWO_7O0_wUl5kivX8iSsqcIZtVZqqyr/exec';
-    const video = document.getElementById('vid-player');
-    let hls = new Hls();
+    const player = videojs('vid');
 
-    async function fetchAndPlay(key) {
+    async function loadAndPlay(channelKey) {
+        const msg = document.getElementById('msg');
+        msg.style.display = 'none';
+
         try {
-            // جلب الرابط من Google Script مع منع الكاش لضمان أحدث البيانات
-            const response = await fetch(`${scriptURL}?cache=${Date.now()}`);
+            // جلب البيانات بنفس طريقة كودك القديم (مع Math.random لكسر التخزين)
+            const response = await fetch(scriptURL + '?cache=' + Math.random());
             const data = await response.json();
-            const streamUrl = data[key] || data.url;
 
-            if (streamUrl) {
-                document.getElementById('video-wrap').style.display = 'block';
-                
-                // 1. دعم المتصفحات التي لا تدعم HLS افتراضياً (مثل Chrome على الكمبيوتر)
-                if (Hls.isSupported() && streamUrl.includes('m3u8')) {
-                    hls.loadSource(streamUrl);
-                    hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
-                } 
-                // 2. دعم الأجهزة التي تدعم HLS افتراضياً (مثل الآيفون وبعض متصفحات الأندرويد)
-                else if (video.canPlayType('application/vnd.apple.mpegurl') || streamUrl.includes('mp4')) {
-                    video.src = streamUrl;
-                    video.play();
-                }
-                // 3. محاولة التشغيل المباشر لأي رابط آخر
-                else {
-                    video.src = streamUrl;
-                    video.play();
-                }
+            // ملاحظة: إذا كان السكريبت يرسل "url" فقط استخدم data.url
+            // إذا كان يرسل ch1 و ch2 استخدمنا المنطق أدناه:
+            let finalUrl = data[channelKey] || data.url; 
+
+            if (finalUrl) {
+                document.getElementById('player-container').style.display = 'block';
+                player.src({ 
+                    src: finalUrl, 
+                    type: (finalUrl.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4') 
+                });
+                player.play().catch(() => {
+                    player.muted(true);
+                    player.play();
+                });
             } else {
-                alert("عذراً، الرابط غير متاح حالياً");
+                showError();
             }
         } catch (e) {
-            alert("فشل جلب البيانات من السيرفر");
+            showError();
         }
     }
 
-    function killPlayer() {
-        video.pause();
-        hls.destroy(); // تدمير عملية البث بالكامل لمسح الذاكرة
-        hls = new Hls(); // إعادة التهيئة للمرة القادمة
-        video.src = "";
-        video.load();
-        document.getElementById('video-wrap').style.display = 'none';
+    function showError() {
+        const msg = document.getElementById('msg');
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 3000);
+    }
+
+    function stopPlayer() {
+        player.pause();
+        document.getElementById('player-container').style.display = 'none';
     }
 </script>
-
 </body>
 </html>
