@@ -3,121 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>مشغل طالب الشامل | النسخة الاحترافية</title>
+    <title>مشغل طالب PRO</title>
     
-    <!-- مكتبات التشغيل العالمية -->
+    <!-- مكتبات الفيديو الاحترافية -->
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    <!-- محرك فك تشفير HLS المتقدم -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <style>
-        * { -webkit-user-select: none; user-select: none; outline: none; box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: sans-serif; overflow: hidden; }
         
-        .glass-bg {
+        /* تصميم زجاجي لمشروع Sarmad Al-Agha */
+        .glass-ui {
             height: 100vh; display: flex; align-items: center; justify-content: center;
             background: radial-gradient(circle at center, #1a1a2e 0%, #000 100%);
         }
 
-        .panel {
+        .card {
             background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 35px; padding: 35px; backdrop-filter: blur(25px);
-            width: 90%; max-width: 380px; text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+            border-radius: 35px; padding: 40px; backdrop-filter: blur(25px);
+            width: 85%; max-width: 380px; text-align: center;
         }
 
-        .btn-play {
+        .btn-stream {
             background: linear-gradient(135deg, #6750a4, #904af9); color: white;
             border: none; border-radius: 20px; padding: 20px; width: 100%; margin: 12px 0;
-            font-size: 17px; font-weight: bold; cursor: pointer; transition: 0.3s;
-            box-shadow: 0 5px 15px rgba(103, 80, 164, 0.3);
+            font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s;
         }
-        .btn-play:active { transform: scale(0.95); opacity: 0.9; }
 
-        #player-layer {
+        #player-box {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999;
         }
 
         .video-js { width: 100% !important; height: 100% !important; }
 
-        .close-btn {
-            position: absolute; top: 30px; right: 20px; background: rgba(255,255,255,0.2);
+        .btn-close {
+            position: absolute; top: 30px; right: 20px; background: rgba(0,0,0,0.6);
             color: white; border: 1px solid rgba(255,255,255,0.2); 
-            padding: 10px 20px; border-radius: 15px; z-index: 10000; cursor: pointer;
-            backdrop-filter: blur(10px);
+            padding: 10px 20px; border-radius: 15px; z-index: 10000;
         }
     </style>
 </head>
 <body>
 
-<div class="glass-bg">
-    <div class="panel">
-        <h2 style="color: white; margin-bottom: 30px; letter-spacing: 1px;">مشغل طالب 2026</h2>
-        
-        <!-- زر القناة التي أرسلتها -->
-        <button class="btn-play" onclick="smartLoad('https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-iraq/e38c44b1b43474e1c39cb5b90203691e/index.m3u8?aws.manifestfilter=video_height:144-720;video_co')">
+<div class="glass-ui">
+    <div class="card">
+        <h2 style="color: white; margin-bottom: 30px;">مشغل طالب 2026</h2>
+        <button class="btn-stream" onclick="playNow('https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-iraq/e38c44b1b43474e1c39cb5b90203691e/index.m3u8?aws.manifestfilter=video_height:144-720;video_co')">
             تشغيل MBC Iraq
-        </button>
-
-        <button class="btn-play" style="background: #311b92;" onclick="smartLoad('ضع_رابط_آخر_هنا')">
-            قناة إضافية
         </button>
     </div>
 </div>
 
-<div id="player-layer">
-    <div class="close-btn" onclick="destroyPlayer()">إغلاق ✕</div>
-    <video id="universal-player" class="video-js vjs-big-play-centered" playsinline></video>
+<div id="player-box">
+    <div class="btn-close" onclick="stopNow()">إغلاق ✕</div>
+    <video id="pro-player" class="video-js vjs-big-play-centered" playsinline></video>
 </div>
 
 <script>
-    var player = videojs('universal-player', {
+    var vPlayer = videojs('pro-player', {
         controls: true,
         fluid: true,
-        html5: {
-            hls: { overrideNative: true },
-            nativeVideoTracks: false,
-            nativeAudioTracks: false,
-            nativeTextTracks: false
-        }
+        html5: { hls: { overrideNative: true } }
     });
 
-    function smartLoad(url) {
-        if (!url || url === "" || url === "ضع_رابط_آخر_هنا") return;
-        
-        document.getElementById('player-layer').style.display = 'block';
-
-        // تحديد النوع تلقائياً بناءً على محتوى الرابط
-        let type = 'video/mp4'; // الافتراضي
-        if (url.includes('m3u8') || url.includes('manifest')) {
-            type = 'application/x-mpegURL';
-        }
-
-        player.src({
+    function playNow(url) {
+        document.getElementById('player-box').style.display = 'block';
+        vPlayer.src({
             src: url,
-            type: type
+            type: 'application/x-mpegURL'
         });
-
-        player.ready(function() {
-            // محاولة التشغيل مع التعامل مع قيود المتصفحات
-            var promise = player.play();
-            if (promise !== undefined) {
-                promise.catch(function() {
-                    player.muted(true);
-                    player.play();
-                });
-            }
+        vPlayer.play().catch(function() {
+            vPlayer.muted(true);
+            vPlayer.play();
         });
     }
 
-    function destroyPlayer() {
-        player.pause();
-        player.reset(); // مسح الرابط والبيانات تماماً
-        document.getElementById('player-layer').style.display = 'none';
+    function stopNow() {
+        vPlayer.pause();
+        vPlayer.reset();
+        document.getElementById('player-box').style.display = 'none';
     }
 </script>
-
 </body>
 </html>
